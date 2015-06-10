@@ -10,6 +10,7 @@ BSD 3-Clause license, which is available in the LICENSE file of this
 project.
 --------------------------------------------------------------------
 
-The "build.u2up" software provides "u2up" packages manipulation code.
+The "build.u2up" software provides "u2up" component framework together
+with its specific SW packages manipulation code.
 
 
