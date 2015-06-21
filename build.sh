@@ -90,7 +90,7 @@ do
 				tar czvf $comp_build_DIR/files.tgz ${!subsubst}
 				cd - > /dev/null
 				cd $comp_build_DIR
-				$build_u2up_DIR/create_package.sh $comp_package_name-$comp_version files.tgz
+				$build_u2up_DIR/create_package.sh $comp_package_name-$comp_version files.tgz $comp_specs_DIR/name $comp_specs_DIR/version $comp_specs_DIR/required
 				if [ "x"$comp_repos_DIR != "x" ]
 				then
 					echo "${pre}Copy package to the common repository: "$comp_repos_DIR
