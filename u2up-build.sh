@@ -16,6 +16,13 @@ export tab="${tab}-"
 pre="${tab}${pro}"
 echo "${pre}CALLED: "$0
 build_u2up_DIR=`dirname $0`
+if [ -f $build_u2up_DIR"/u2up-conf.sh" ]
+then
+	. $build_u2up_DIR"/u2up-conf.sh"
+	echo "${pre}using U2UP configuration file: "$build_u2up_DIR"/u2up-conf.sh"
+else
+	echo "${pre}without U2UP configuration file at: "$build_u2up_DIR"/"
+fi
 echo "${pre}from build dir: "$PWD
 comp_build_DIR=$PWD
 
@@ -41,9 +48,13 @@ then
 	comp_repos_DIR=$PWD
 	cd - > /dev/null
 	mkdir -p $comp_repos_DIR
-	echo "${pre}repository dir: "$comp_repos_DIR
+	echo "${pre} U2UP repository dir: "$comp_repos_DIR
 else
-	comp_repos_DIR=
+	mkdir -p $comp_repos_dir
+	cd $comp_repos_dir
+	comp_repos_DIR=$PWD
+	cd - > /dev/null
+	echo "${pre} Using predefined U2UP repository dir: "$comp_repos_DIR
 fi
 
 . $comp_specs_DIR/name
