@@ -14,62 +14,188 @@ set -e
 export pro="> "
 export tab="${tab}-"
 pre="${tab}${pro}"
+
+comp_source_dir=""
+comp_build_dir=""
+comp_repo_dir=""
+comp_clean_build=0
+
+function usage_help ()
+{
+	echo
+	echo -n "Usage: "
+	basename -z $0
+	echo " [{-repodir=|-r[=]}REPOSITORY_DIR] [{-buildir=|-b[=]}BUILD_DIR] [--srcdir=|-s[=]]SOURCE_DIR"
+	echo
+#	return
+	exit 1
+}
+
+while [[ $# > 0 ]]
+do
+#	echo "AAAAAAA:$#"
+#	echo "aaaaaaa:$1"
+	case $1 in
+	-s)
+		shift # past argument
+		comp_source_dir="${1}"
+		;;
+	--srcdir=*|-s=*)
+		comp_source_dir="${1#*=}"
+		;;
+	-s*)
+		comp_source_dir="${1#*s}"
+		;;
+	-b)
+		shift # past argument
+		comp_build_dir="${1}"
+		;;
+	--buildir=*|-b=*)
+		comp_build_dir="${1#*=}"
+		;;
+	-b*)
+		comp_build_dir="${1#*b}"
+		;;
+	-r)
+		shift # past argument
+		comp_repo_dir="${1}"
+		;;
+	--repodir=*|-r=*)
+		comp_repo_dir="${1#*=}"
+		;;
+	-r*)
+		comp_repo_dir="${1#*r}"
+		;;
+	*)
+		# source dir or unknown option
+		if [ "x"$comp_source_dir == "x" ]
+		then
+			if [ -d $1 ]
+			then
+				comp_source_dir=$1
+			else
+				echo "${pre}ERROR: Unknown option: "$1
+				usage_help
+			fi
+		else
+			echo "${pre}ERROR: Unknown option: "$1
+			usage_help
+		fi
+		;;
+	esac
+	set +e; shift; set -e # to the next token, if any
+done
+#echo "Source dir: "$comp_source_dir
+#echo "Build dir: "$comp_build_dir
+#echo "Repository dir: "$comp_repo_dir
+
+if [ "x"$comp_source_dir == "x" ]
+then
+	echo "${pre}ERROR: Setting source directory is mandatory!"
+	usage_help
+fi
+
+export pro="> "
+export tab="${tab}-"
+pre="${tab}${pro}"
 echo "${pre}CALLED: "$0
 build_u2up_DIR=`dirname $0`
-if [ -f $build_u2up_DIR"/u2up-conf.sh" ]
-then
-	. $build_u2up_DIR"/u2up-conf.sh"
-	echo "${pre}using U2UP configuration file: "$build_u2up_DIR"/u2up-conf.sh"
-else
-	echo "${pre}without U2UP configuration file at: "$build_u2up_DIR"/"
-fi
-echo "${pre}from build dir: "$PWD
-comp_build_DIR=$PWD
+current_work_DIR=$PWD
+echo "${pre}from current work dir: "$current_work_DIR
 
-if [ "x"$1 != "x" ]
+# Set absolute SOURCE directory:
+echo "${pre}Using specified component source dir: "$comp_source_dir
+cd $comp_source_dir
+comp_source_DIR=$PWD
+cd - > /dev/null
+echo "${pre}component's absolute source dir: "$comp_source_DIR
+comp_source_NAME=$(basename -z $comp_source_DIR)
+#echo "${pre}component source name: "$comp_source_NAME
+comp_specs_DIR=$comp_source_DIR/comp_specs
+if [ ! -d $comp_specs_DIR ]
 then
-	cd $1
-	comp_source_DIR=$PWD
-	cd - > /dev/null
-	echo "${pre}source dir: "$comp_source_DIR
-else
-	echo "${pre}ERROR: The first parameter must be source dir!"
+	echo "${pre}ERROR: Source directory is not an U2UP component (missing comp_specs dir)!"
 	exit 1
 fi
-
-comp_specs_DIR=$comp_source_DIR/comp_specs
-echo "${pre}comp_specs dir: "$comp_specs_DIR
-comp_install_DIR=$comp_build_DIR/install
-echo "${pre}install dir: "$comp_install_DIR
-
-if [ "x"$2 != "x" ]
+echo "${pre}component specifications dir: "$comp_specs_DIR
+if [ ! -f $comp_specs_DIR/name ]
 then
-	cd $2
-	comp_repos_DIR=$PWD
-	cd - > /dev/null
-	mkdir -p $comp_repos_DIR
-	echo "${pre} U2UP repository dir: "$comp_repos_DIR
-else
-	mkdir -p $comp_repos_dir
-	cd $comp_repos_dir
-	comp_repos_DIR=$PWD
-	cd - > /dev/null
-	echo "${pre} Using predefined U2UP repository dir: "$comp_repos_DIR
+	echo "${pre}ERROR: Missing comp_specs/name file)!"
+	exit 1
 fi
-
 . $comp_specs_DIR/name
-
 echo "${pre}Component name: "$comp_name
-
+if [ ! -f $comp_specs_DIR/version ]
+then
+	echo "${pre}ERROR: Missing comp_specs/version file)!"
+	exit 1
+fi
 . $comp_specs_DIR/version
-
 comp_version=$comp_version_MAJOR"."$comp_version_MINOR"."$comp_version_PATCH
 echo "${pre}Component version: "$comp_version
 
-$build_u2up_DIR/import_required.sh $comp_specs_DIR $comp_build_DIR $comp_repos_DIR
+conf_u2up_FILE="u2up-conf"
+if [ -f $build_u2up_DIR"/"$conf_u2up_FILE ]
+then
+	. $build_u2up_DIR"/"$conf_u2up_FILE
+	echo "${pre}Using configuration file: "$build_u2up_DIR"/"$conf_u2up_FILE
+	#cat $build_u2up_DIR"/"$conf_u2up_FILE
+else
+	echo "${pre}Without "$conf_u2up_FILE" configuration file expected at: "$build_u2up_DIR"/"
+fi
 
+# Set absolute BUILD directory:
+if [ "x"$comp_build_dir == "x" ]
+then
+	echo "${pre}Using predefined U2UP build dir: "$u2up_build_dir
+	comp_build_DIR=$u2up_build_dir/$comp_source_NAME
+	mkdir -p $comp_build_DIR
+	cd $comp_build_DIR
+else
+	echo "${pre}Using specified U2UP build dir: "$comp_build_dir
+	mkdir -p $comp_build_dir
+	cd $comp_build_dir
+	comp_build_DIR=$PWD
+fi
+echo "${pre}component's absolute build dir: "$comp_build_DIR
+
+#???Should this be an option too???
+comp_install_DIR=$comp_build_DIR/install
+echo "${pre}component installation dir: "$comp_install_DIR
+
+if [ "x"$comp_repo_dir == "x" ]
+then
+	echo "${pre}Using predefined U2UP repository dir: "$u2up_repo_dir
+	comp_repo_DIR=$u2up_repo_dir
+	mkdir -p $comp_repo_DIR
+else
+	echo "${pre}Using specified U2UP repository dir: "$comp_repo_dir
+	mkdir -p $comp_repo_dir
+	cd $comp_repo_dir
+	comp_repo_DIR=$PWD
+	cd - > /dev/null
+fi
+echo "${pre}absolute repository dir: "$comp_repo_DIR
+
+if [ ! -f $comp_specs_DIR/required ]
+then
+	echo "${pre}ERROR: Missing comp_specs/required file)!"
+	exit 1
+fi
+$build_u2up_DIR/import_required.sh $comp_specs_DIR $comp_build_DIR $comp_repo_DIR
+
+if [ ! -f $comp_specs_DIR/build ]
+then
+	echo "${pre}ERROR: Missing comp_specs/build file)!"
+	exit 1
+fi
 . $comp_specs_DIR/build
 
+if [ ! -f $comp_specs_DIR/packages ]
+then
+	echo "${pre}ERROR: Missing comp_specs/packages file)!"
+	exit 1
+fi
 . $comp_specs_DIR/packages
 
 for package_name in "${COMP_PACKAGES[@]}"
@@ -102,10 +228,10 @@ do
 				cd - > /dev/null
 				cd $comp_build_DIR
 				$build_u2up_DIR/create_package.sh $comp_package_name-$comp_version files.tgz $comp_specs_DIR/name $comp_specs_DIR/version $comp_specs_DIR/required
-				if [ "x"$comp_repos_DIR != "x" ]
+				if [ "x"$comp_repo_DIR != "x" ]
 				then
-					echo "${pre}Copy package to the common repository: "$comp_repos_DIR
-					cp -pf $comp_package_name-$comp_version* $comp_repos_DIR/
+					echo "${pre}Copy package to the common repository: "$comp_repo_DIR
+					cp -pf $comp_package_name-$comp_version* $comp_repo_DIR/
 				else
 					echo "${pre}The second parameter (a common repository path) not provided (package not copied)!"
 				fi
