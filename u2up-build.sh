@@ -11,6 +11,13 @@
 #
 
 set -e
+
+# U2UP build version:
+build_u2up_MAJOR=0
+build_u2up_MINOR=1
+build_u2up_PATCH=1
+build_u2up_version=$build_u2up_MAJOR.$build_u2up_MINOR.$build_u2up_PATCH
+
 export pro="> "
 export tab="${tab}-"
 pre="${tab}${pro}"
@@ -102,6 +109,7 @@ echo "${pre}CALLED: "$0
 build_u2up_DIR=`dirname $0`
 current_work_DIR=$PWD
 echo "${pre}from current work dir: "$current_work_DIR
+echo "${pre}BUILD.U2UP - version: "$build_u2up_version
 
 # Set absolute SOURCE directory:
 echo "${pre}Using specified component source dir: "$comp_source_dir
@@ -120,14 +128,39 @@ fi
 echo "${pre}component specifications dir: "$comp_specs_DIR
 if [ ! -f $comp_specs_DIR/name ]
 then
-	echo "${pre}ERROR: Missing comp_specs/name file)!"
+	echo "${pre}ERROR: Missing comp_specs/name file!"
 	exit 1
 fi
 . $comp_specs_DIR/name
 echo "${pre}Component name: "$comp_name
+echo "${pre}minimum required BUILD.U2UP: "$min_build_u2up_MAJOR.$min_build_u2up_MINOR
+if [ "x"$min_build_u2up_MAJOR != "x" ]
+then
+	if [ $min_build_u2up_MAJOR -eq $build_u2up_MAJOR ]
+	then
+		if [ "x"$min_build_u2up_MINOR != "x" ]
+		then
+			if [ $min_build_u2up_MINOR -gt $build_u2up_MINOR ]
+			then
+				echo "${pre}ERROR: Incompatible minimal build.u2up version required (min_build_u2up_MINOR=${min_build_u2up_MINOR})!"
+				exit 1
+			fi
+		else
+			echo "${pre}ERROR: Missing minimal build.u2up version required (min_build_u2up_MINOR)!"
+			exit 1
+		fi
+	else
+		echo "${pre}ERROR: Incompatible minimal build.u2up version required (min_build_u2up_MAJOR=${min_build_u2up_MAJOR})!"
+		exit 1
+	fi
+else
+	echo "${pre}ERROR: Missing minimal build.u2up version required (min_build_u2up_MAJOR)!"
+	exit 1
+fi
+
 if [ ! -f $comp_specs_DIR/version ]
 then
-	echo "${pre}ERROR: Missing comp_specs/version file)!"
+	echo "${pre}ERROR: Missing comp_specs/version file!"
 	exit 1
 fi
 . $comp_specs_DIR/version
@@ -159,10 +192,6 @@ else
 fi
 echo "${pre}component's absolute build dir: "$comp_build_DIR
 
-#???Should this be an option too???
-comp_install_DIR=$comp_build_DIR/install
-echo "${pre}component installation dir: "$comp_install_DIR
-
 if [ "x"$comp_repo_dir == "x" ]
 then
 	echo "${pre}Using predefined U2UP repository dir: "$u2up_repo_dir
@@ -179,21 +208,36 @@ echo "${pre}absolute repository dir: "$comp_repo_DIR
 
 if [ ! -f $comp_specs_DIR/required ]
 then
-	echo "${pre}ERROR: Missing comp_specs/required file)!"
+	echo "${pre}ERROR: Missing comp_specs/required file!"
 	exit 1
 fi
 $build_u2up_DIR/import_required.sh $comp_specs_DIR $comp_build_DIR $comp_repo_DIR
 
 if [ ! -f $comp_specs_DIR/build ]
 then
-	echo "${pre}ERROR: Missing comp_specs/build file)!"
+	echo "${pre}ERROR: Missing comp_specs/build file!"
 	exit 1
 fi
+#???Should this be an option too???
+#comp_install_DIR=$comp_build_DIR/install
+comp_install_dir=
 . $comp_specs_DIR/build
+if [ "x"$comp_install_dir == "x" ]
+then
+	echo "${pre}ERROR: Internal installation directory not set/provided by the component!"
+	exit 1
+else
+	echo "${pre}Component provided internal installation dir: "$comp_install_dir
+	cd $comp_install_dir
+	comp_install_DIR=$PWD
+	cd - > /dev/null
+fi
+echo "${pre}absolute internal component installation dir: "$comp_install_DIR
+#exit 55
 
 if [ ! -f $comp_specs_DIR/packages ]
 then
-	echo "${pre}ERROR: Missing comp_specs/packages file)!"
+	echo "${pre}ERROR: Missing comp_specs/packages file!"
 	exit 1
 fi
 . $comp_specs_DIR/packages
