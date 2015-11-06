@@ -17,8 +17,8 @@ echo "${pre}CALLED: "$0
 
 if [ "x"$1 != "x" ]
 then
-	comp_specs_DIR=$1
-	echo "${pre}Import using: "$comp_specs_DIR"/required"
+	comp_u2up_DIR=$1
+	echo "${pre}Import using: "$comp_u2up_DIR"/required"
 else
 	echo "${pre}ERROR: The component specifications path not provided!"
 fi
@@ -70,5 +70,5 @@ while read line; do
 		# Extract package:
 		$comp_repos_DIR/$comp_required_name-$comp_required_version.u2up extract
 	fi
-done < $comp_specs_DIR/required
+done < $comp_u2up_DIR/required
 exit 0

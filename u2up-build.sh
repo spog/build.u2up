@@ -106,10 +106,16 @@ export pro="> "
 export tab="${tab}-"
 pre="${tab}${pro}"
 echo "${pre}CALLED: "$0
-build_u2up_DIR=`dirname $0`
 current_work_DIR=$PWD
 echo "${pre}from current work dir: "$current_work_DIR
 echo "${pre}BUILD.U2UP - version: "$build_u2up_version
+
+# Set absolute U2UP tools directory:
+build_u2up_dir=$(dirname $(which $0))
+cd $build_u2up_dir
+build_u2up_DIR=$PWD
+cd - > /dev/null
+echo "${pre}U2UP absolute tools dir: "$build_u2up_DIR
 
 # Set absolute SOURCE directory:
 echo "${pre}Using specified component source dir: "$comp_source_dir
@@ -119,21 +125,21 @@ cd - > /dev/null
 echo "${pre}component's absolute source dir: "$comp_source_DIR
 comp_source_NAME=$(basename -z $comp_source_DIR)
 #echo "${pre}component source name: "$comp_source_NAME
-comp_specs_DIR=$comp_source_DIR/comp_specs
-if [ ! -d $comp_specs_DIR ]
+comp_u2up_DIR=$comp_source_DIR/u2up
+if [ ! -d $comp_u2up_DIR ]
 then
-	echo "${pre}ERROR: Source directory is not an U2UP component (missing comp_specs dir)!"
+	echo "${pre}ERROR: Source directory is not an U2UP component (missing the u2up dir)!"
 	exit 1
 fi
-echo "${pre}component specifications dir: "$comp_specs_DIR
-if [ ! -f $comp_specs_DIR/name ]
+echo "${pre}component specifications dir: "$comp_u2up_DIR
+if [ ! -f $comp_u2up_DIR/name ]
 then
-	echo "${pre}ERROR: Missing comp_specs/name file!"
+	echo "${pre}ERROR: Missing the u2up/name file!"
 	exit 1
 fi
-. $comp_specs_DIR/name
-echo "${pre}Component name: "$comp_name
-echo "${pre}minimum required BUILD.U2UP: "$min_build_u2up_MAJOR.$min_build_u2up_MINOR
+. $comp_u2up_DIR/name
+echo "${pre}Component requires BUILD.U2UP (minimum compatible) version: "$min_build_u2up_MAJOR.$min_build_u2up_MINOR
+echo "${pre}Component NAME: "$comp_name
 if [ "x"$min_build_u2up_MAJOR != "x" ]
 then
 	if [ $min_build_u2up_MAJOR -eq $build_u2up_MAJOR ]
@@ -158,14 +164,14 @@ else
 	exit 1
 fi
 
-if [ ! -f $comp_specs_DIR/version ]
+if [ ! -f $comp_u2up_DIR/version ]
 then
-	echo "${pre}ERROR: Missing comp_specs/version file!"
+	echo "${pre}ERROR: Missing the u2up/version file!"
 	exit 1
 fi
-. $comp_specs_DIR/version
+. $comp_u2up_DIR/version
 comp_version=$comp_version_MAJOR"."$comp_version_MINOR"."$comp_version_PATCH
-echo "${pre}Component version: "$comp_version
+echo "${pre}Component VERSION: "$comp_version
 
 conf_u2up_FILE="u2up-conf"
 if [ -f $build_u2up_DIR"/"$conf_u2up_FILE ]
@@ -206,22 +212,22 @@ else
 fi
 echo "${pre}absolute repository dir: "$comp_repo_DIR
 
-if [ ! -f $comp_specs_DIR/required ]
+if [ ! -f $comp_u2up_DIR/required ]
 then
-	echo "${pre}ERROR: Missing comp_specs/required file!"
+	echo "${pre}ERROR: Missing the u2up/required file!"
 	exit 1
 fi
-$build_u2up_DIR/import_required.sh $comp_specs_DIR $comp_build_DIR $comp_repo_DIR
+$build_u2up_DIR/import_required.sh $comp_u2up_DIR $comp_build_DIR $comp_repo_DIR
 
-if [ ! -f $comp_specs_DIR/build ]
+if [ ! -f $comp_u2up_DIR/build ]
 then
-	echo "${pre}ERROR: Missing comp_specs/build file!"
+	echo "${pre}ERROR: Missing the u2up/build file!"
 	exit 1
 fi
 #???Should this be an option too???
 #comp_install_DIR=$comp_build_DIR/install
 comp_install_dir=
-. $comp_specs_DIR/build
+. $comp_u2up_DIR/build
 if [ "x"$comp_install_dir == "x" ]
 then
 	echo "${pre}ERROR: Internal installation directory not set/provided by the component!"
@@ -235,12 +241,12 @@ fi
 echo "${pre}absolute internal component installation dir: "$comp_install_DIR
 #exit 55
 
-if [ ! -f $comp_specs_DIR/packages ]
+if [ ! -f $comp_u2up_DIR/packages ]
 then
-	echo "${pre}ERROR: Missing comp_specs/packages file!"
+	echo "${pre}ERROR: Missing the u2up/packages file!"
 	exit 1
 fi
-. $comp_specs_DIR/packages
+. $comp_u2up_DIR/packages
 
 for package_name in "${COMP_PACKAGES[@]}"
 do
@@ -271,7 +277,7 @@ do
 				tar czvf $comp_build_DIR/files.tgz ${!subsubst}
 				cd - > /dev/null
 				cd $comp_build_DIR
-				$build_u2up_DIR/create_package.sh $comp_package_name-$comp_version files.tgz $comp_specs_DIR/name $comp_specs_DIR/version $comp_specs_DIR/required
+				$build_u2up_DIR/create_package.sh $comp_package_name-$comp_version files.tgz $comp_u2up_DIR/name $comp_u2up_DIR/version $comp_u2up_DIR/required
 				if [ "x"$comp_repo_DIR != "x" ]
 				then
 					echo "${pre}Copy package to the common repository: "$comp_repo_DIR
