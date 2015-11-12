@@ -128,7 +128,7 @@ comp_home_NAME=$(basename -z $comp_home_DIR)
 comp_u2up_DIR=$comp_home_DIR/u2up
 if [ ! -d $comp_u2up_DIR ]
 then
-	echo "${pre}ERROR: Source directory is not an U2UP component (missing the u2up dir)!"
+	echo "${pre}ERROR: HOME directory of the U2UP component (missing the u2up subdir)!"
 	exit 1
 fi
 echo "${pre}component specifications dir: "$comp_u2up_DIR
