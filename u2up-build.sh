@@ -22,7 +22,7 @@ export pro="> "
 export tab="${tab}-"
 pre="${tab}${pro}"
 
-comp_source_dir=""
+comp_home_dir=""
 comp_build_dir=""
 comp_repo_dir=""
 comp_clean_build=0
@@ -32,7 +32,7 @@ function usage_help ()
 	echo
 	echo -n "Usage: "
 	basename -z $0
-	echo " [{-repodir=|-r[=]}REPOSITORY_DIR] [{-buildir=|-b[=]}BUILD_DIR] [--srcdir=|-s[=]]SOURCE_DIR"
+	echo " [{-repodir=|-r[=]}REPOSITORY_DIR] [{-buildir=|-b[=]}BUILD_DIR] [--compdir=|-c[=]]COMP_HOME_DIR"
 	echo
 #	return
 	exit 1
@@ -43,15 +43,15 @@ do
 #	echo "AAAAAAA:$#"
 #	echo "aaaaaaa:$1"
 	case $1 in
-	-s)
+	-c)
 		shift # past argument
-		comp_source_dir="${1}"
+		comp_home_dir="${1}"
 		;;
-	--srcdir=*|-s=*)
-		comp_source_dir="${1#*=}"
+	--compdir=*|-c=*)
+		comp_home_dir="${1#*=}"
 		;;
-	-s*)
-		comp_source_dir="${1#*s}"
+	-c*)
+		comp_home_dir="${1#*c}"
 		;;
 	-b)
 		shift # past argument
@@ -74,12 +74,12 @@ do
 		comp_repo_dir="${1#*r}"
 		;;
 	*)
-		# source dir or unknown option
-		if [ "x"$comp_source_dir == "x" ]
+		# comp_home_dir or unknown option
+		if [ "x"$comp_home_dir == "x" ]
 		then
 			if [ -d $1 ]
 			then
-				comp_source_dir=$1
+				comp_home_dir=$1
 			else
 				echo "${pre}ERROR: Unknown option: "$1
 				usage_help
@@ -92,13 +92,13 @@ do
 	esac
 	set +e; shift; set -e # to the next token, if any
 done
-#echo "Source dir: "$comp_source_dir
+#echo "Source dir: "$comp_home_dir
 #echo "Build dir: "$comp_build_dir
 #echo "Repository dir: "$comp_repo_dir
 
-if [ "x"$comp_source_dir == "x" ]
+if [ "x"$comp_home_dir == "x" ]
 then
-	echo "${pre}ERROR: Setting source directory is mandatory!"
+	echo "${pre}ERROR: Setting component home directory is mandatory!"
 	usage_help
 fi
 
@@ -117,15 +117,15 @@ build_u2up_DIR=$PWD
 cd - > /dev/null
 echo "${pre}U2UP absolute tools dir: "$build_u2up_DIR
 
-# Set absolute SOURCE directory:
-echo "${pre}Using specified component source dir: "$comp_source_dir
-cd $comp_source_dir
-comp_source_DIR=$PWD
+# Set absolute COMPONENT HOME directory:
+echo "${pre}Using specified component home dir: "$comp_home_dir
+cd $comp_home_dir
+comp_home_DIR=$PWD
 cd - > /dev/null
-echo "${pre}component's absolute source dir: "$comp_source_DIR
-comp_source_NAME=$(basename -z $comp_source_DIR)
-#echo "${pre}component source name: "$comp_source_NAME
-comp_u2up_DIR=$comp_source_DIR/u2up
+echo "${pre}component's absolute component home dir: "$comp_home_DIR
+comp_home_NAME=$(basename -z $comp_home_DIR)
+#echo "${pre}component name: "$comp_home_NAME
+comp_u2up_DIR=$comp_home_DIR/u2up
 if [ ! -d $comp_u2up_DIR ]
 then
 	echo "${pre}ERROR: Source directory is not an U2UP component (missing the u2up dir)!"
@@ -187,7 +187,7 @@ fi
 if [ "x"$comp_build_dir == "x" ]
 then
 	echo "${pre}Using predefined U2UP build dir: "$u2up_build_dir
-	comp_build_DIR=$u2up_build_dir/$comp_source_NAME
+	comp_build_DIR=$u2up_build_dir/$comp_home_NAME
 	mkdir -p $comp_build_DIR
 	cd $comp_build_DIR
 else
